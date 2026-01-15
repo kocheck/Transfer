@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Transfer Plugin</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 16px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        color: var(--figma-color-text);
+        background-color: var(--figma-color-bg);
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 32px);
+      }
+
+      /* Tabs */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid var(--figma-color-border);
+      }
+
+      .tab {
+        padding: 8px 12px;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        color: var(--figma-color-text-secondary);
+        font-size: 11px;
+        font-weight: 500;
+        transition: all 0.2s;
+      }
+
+      .tab:hover {
+        color: var(--figma-color-text);
+      }
+
+      .tab.active {
+        color: var(--figma-color-text);
+        border-bottom-color: var(--figma-color-text-brand);
+      }
+
+      /* Tab content */
+      .tab-content {
+        display: none;
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .tab-content.active {
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Selection info */
+      .selection-info {
+        padding: 12px;
+        background: var(--figma-color-bg-secondary);
+        border-radius: 4px;
+        margin-bottom: 16px;
+      }
+
+      .selection-info h3 {
+        margin: 0 0 8px 0;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--figma-color-text-secondary);
+      }
+
+      .selection-stat {
+        display: flex;
+        justify-content: space-between;
+        margin: 4px 0;
+        font-size: 12px;
+      }
+
+      /* Buttons */
+      button {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .button-primary {
+        background: var(--figma-color-bg-brand);
+        color: white;
+      }
+
+      .button-primary:hover:not(:disabled) {
+        background: var(--figma-color-bg-brand-hover);
+      }
+
+      .button-secondary {
+        background: var(--figma-color-bg-secondary);
+        color: var(--figma-color-text);
+      }
+
+      .button-secondary:hover:not(:disabled) {
+        background: var(--figma-color-bg-tertiary);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 8px;
+        margin: 16px 0;
+      }
+
+      /* Results */
+      .results-container {
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .component-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .component-card {
+        padding: 12px;
+        background: var(--figma-color-bg-secondary);
+        border-radius: 4px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .component-card input[type='checkbox'] {
+        margin-top: 4px;
+      }
+
+      .component-info {
+        flex: 1;
+      }
+
+      .component-name {
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      .component-description {
+        font-size: 11px;
+        color: var(--figma-color-text-secondary);
+        margin-bottom: 4px;
+      }
+
+      .component-meta {
+        display: flex;
+        gap: 8px;
+        font-size: 10px;
+        color: var(--figma-color-text-tertiary);
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 10px;
+        font-weight: 500;
+      }
+
+      .badge-warning {
+        background: #fbbf24;
+        color: #000;
+      }
+
+      .badge-error {
+        background: #ef4444;
+        color: white;
+      }
+
+      .badge-success {
+        background: #10b981;
+        color: white;
+      }
+
+      /* Progress */
+      .progress-container {
+        padding: 16px;
+        background: var(--figma-color-bg-secondary);
+        border-radius: 4px;
+        margin: 16px 0;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: var(--figma-color-bg-tertiary);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 8px 0;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--figma-color-bg-brand);
+        transition: width 0.3s;
+      }
+
+      .progress-text {
+        font-size: 11px;
+        color: var(--figma-color-text-secondary);
+        margin: 4px 0;
+      }
+
+      /* Warning list */
+      .warning-list {
+        margin: 16px 0;
+      }
+
+      .warning-item {
+        padding: 8px;
+        background: rgba(251, 191, 36, 0.1);
+        border-left: 3px solid #fbbf24;
+        margin: 4px 0;
+        font-size: 11px;
+      }
+
+      .error-item {
+        padding: 8px;
+        background: rgba(239, 68, 68, 0.1);
+        border-left: 3px solid #ef4444;
+        margin: 4px 0;
+        font-size: 11px;
+      }
+
+      /* Settings */
+      .settings-section {
+        margin-bottom: 24px;
+      }
+
+      .settings-section h3 {
+        margin: 0 0 12px 0;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .setting-item {
+        margin: 12px 0;
+      }
+
+      .setting-label {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      input[type='number'],
+      select {
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid var(--figma-color-border);
+        border-radius: 4px;
+        background: var(--figma-color-bg);
+        color: var(--figma-color-text);
+        font-size: 11px;
+      }
+
+      input[type='checkbox'] {
+        margin-right: 8px;
+      }
+
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        font-size: 11px;
+        cursor: pointer;
+        padding: 4px 0;
+      }
+
+      /* History */
+      .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .history-item {
+        padding: 12px;
+        background: var(--figma-color-bg-secondary);
+        border-radius: 4px;
+      }
+
+      .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .history-date {
+        font-size: 11px;
+        color: var(--figma-color-text-secondary);
+      }
+
+      .history-stats {
+        font-size: 10px;
+        color: var(--figma-color-text-tertiary);
+      }
+
+      /* Empty state */
+      .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        text-align: center;
+        color: var(--figma-color-text-secondary);
+      }
+
+      .empty-state-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.3;
+      }
+
+      /* Help */
+      .help-section {
+        margin-bottom: 24px;
+      }
+
+      .help-section h3 {
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        font-weight: 600;
+      }
+
+      .help-section p {
+        margin: 8px 0;
+        font-size: 11px;
+        line-height: 1.5;
+        color: var(--figma-color-text-secondary);
+      }
+
+      .shortcut-list {
+        list-style: none;
+        padding: 0;
+        margin: 8px 0;
+      }
+
+      .shortcut-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 11px;
+      }
+
+      .shortcut-key {
+        font-family: monospace;
+        background: var(--figma-color-bg-secondary);
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+
+      /* Utility classes */
+      .hidden {
+        display: none !important;
+      }
+
+      .mt-16 {
+        margin-top: 16px;
+      }
+
+      .mb-16 {
+        margin-bottom: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="transfer">Transfer</button>
+        <button class="tab" data-tab="settings">Settings</button>
+        <button class="tab" data-tab="history">History</button>
+        <button class="tab" data-tab="help">Help</button>
+      </div>
+
+      <!-- Transfer Tab -->
+      <div class="tab-content active" id="transfer-tab">
+        <div id="selection-info" class="selection-info hidden">
+          <h3>Selection</h3>
+          <div class="selection-stat">
+            <span>Nodes selected:</span>
+            <span id="nodes-selected">0</span>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button class="button-primary" id="analyze-btn" style="flex: 1">
+            Analyze Selection
+          </button>
+        </div>
+
+        <div id="results-container" class="results-container hidden">
+          <div id="stats-summary" class="selection-info"></div>
+
+          <div id="warnings-container" class="warning-list hidden"></div>
+
+          <div class="button-group">
+            <button class="button-secondary" id="select-all-btn">Select All</button>
+            <button class="button-secondary" id="deselect-all-btn">Deselect All</button>
+          </div>
+
+          <div id="component-list" class="component-list"></div>
+
+          <div class="button-group mt-16">
+            <button class="button-primary" id="transfer-btn" style="flex: 1" disabled>
+              Transfer to Page
+            </button>
+          </div>
+        </div>
+
+        <div id="progress-container" class="progress-container hidden">
+          <div class="progress-text" id="progress-phase">Analyzing...</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+          </div>
+          <div class="progress-text" id="progress-text">0%</div>
+          <div class="progress-text" id="progress-item"></div>
+          <button class="button-secondary mt-16" id="cancel-btn">Cancel</button>
+        </div>
+
+        <div id="completion-container" class="hidden">
+          <div class="selection-info">
+            <h3>✅ Transfer Complete</h3>
+            <div id="completion-stats"></div>
+          </div>
+          <div class="button-group">
+            <button class="button-primary" id="go-to-page-btn">Go to Transfer Page</button>
+          </div>
+          <div class="button-group">
+            <button class="button-secondary" id="prepare-copy-btn">Prepare for Copy</button>
+            <button class="button-secondary" id="new-transfer-btn">Start New</button>
+          </div>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+          <div class="empty-state-icon">📦</div>
+          <p>Select components, frames, or instances to analyze their dependencies.</p>
+        </div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div class="tab-content" id="settings-tab">
+        <div class="settings-section">
+          <h3>Layout Preferences</h3>
+          <div class="setting-item">
+            <label class="setting-label">Spacing (px)</label>
+            <input type="number" id="setting-spacing" min="50" max="500" step="10" />
+          </div>
+          <div class="setting-item">
+            <label class="setting-label">Layout Type</label>
+            <select id="setting-layout-type">
+              <option value="grid">Grid</option>
+              <option value="list">List</option>
+            </select>
+          </div>
+          <div class="setting-item">
+            <label class="setting-label">Grid Columns</label>
+            <input type="number" id="setting-grid-columns" min="1" max="10" />
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Transfer Options</h3>
+          <div class="setting-item">
+            <label class="checkbox-label">
+              <input type="checkbox" id="setting-auto-navigate" />
+              Auto-navigate to Transfer page
+            </label>
+          </div>
+          <div class="setting-item">
+            <label class="checkbox-label">
+              <input type="checkbox" id="setting-auto-select" />
+              Auto-select transferred components
+            </label>
+          </div>
+          <div class="setting-item">
+            <label class="checkbox-label">
+              <input type="checkbox" id="setting-include-annotations" />
+              Include annotations/labels
+            </label>
+          </div>
+          <div class="setting-item">
+            <label class="checkbox-label">
+              <input type="checkbox" id="setting-include-descriptions" />
+              Include component descriptions
+            </label>
+          </div>
+          <div class="setting-item">
+            <label class="checkbox-label">
+              <input type="checkbox" id="setting-include-hidden" />
+              Include hidden components
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Transfer Page Behavior</h3>
+          <div class="setting-item">
+            <label class="setting-label">When Transfer page exists:</label>
+            <select id="setting-page-behavior">
+              <option value="ask">Always ask</option>
+              <option value="append">Always append</option>
+              <option value="replace">Always replace</option>
+              <option value="timestamp">Create new with timestamp</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- History Tab -->
+      <div class="tab-content" id="history-tab">
+        <div class="button-group">
+          <button class="button-secondary" id="export-history-btn">Export History</button>
+          <button class="button-secondary" id="clear-history-btn">Clear History</button>
+        </div>
+        <div id="history-list" class="history-list"></div>
+        <div id="history-empty" class="empty-state">
+          <div class="empty-state-icon">📋</div>
+          <p>No transfer history yet.</p>
+        </div>
+      </div>
+
+      <!-- Help Tab -->
+      <div class="tab-content" id="help-tab">
+        <div class="help-section">
+          <h3>Quick Start</h3>
+          <p>
+            1. Select components, frames, or instances in your design<br />
+            2. Click "Analyze Selection" to see all dependencies<br />
+            3. Review and select components to transfer<br />
+            4. Click "Transfer to Page" to collect them on a Transfer page<br />
+            5. Copy from the Transfer page and paste into your destination file
+          </p>
+        </div>
+
+        <div class="help-section">
+          <h3>Keyboard Shortcuts</h3>
+          <ul class="shortcut-list">
+            <li class="shortcut-item">
+              <span>Analyze selection</span>
+              <span class="shortcut-key">Ctrl/Cmd + T</span>
+            </li>
+            <li class="shortcut-item">
+              <span>Execute transfer</span>
+              <span class="shortcut-key">Ctrl/Cmd + Enter</span>
+            </li>
+            <li class="shortcut-item">
+              <span>Go to Transfer page</span>
+              <span class="shortcut-key">Ctrl/Cmd + G</span>
+            </li>
+            <li class="shortcut-item">
+              <span>Cancel operation</span>
+              <span class="shortcut-key">Escape</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="help-section">
+          <h3>Tips</h3>
+          <p>
+            • The plugin only transfers components from the current file, not external libraries<br />
+            • Variant sets are kept together as a single unit<br />
+            • Hidden and locked components can be excluded in Settings<br />
+            • Use the Transfer page as a staging area before copying to other files
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script src="ui.js"></script>
+  </body>
+</html>
