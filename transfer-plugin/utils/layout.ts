@@ -278,10 +278,10 @@ function layoutComponentsInGrid(
  */
 export function calculateOptimalSpacing(componentCount: number, defaultSpacing: number): number {
   // Increase spacing for large component counts
-  if (componentCount > 50) {
-    return defaultSpacing * 1.5;
-  } else if (componentCount > 100) {
+  if (componentCount > 100) {
     return defaultSpacing * 2;
+  } else if (componentCount > 50) {
+    return defaultSpacing * 1.5;
   }
 
   return defaultSpacing;
